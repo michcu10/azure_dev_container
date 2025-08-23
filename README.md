@@ -211,6 +211,7 @@ Get-AzResourceGroup
 - Verify your service principal credentials are correct
 - Check that the service principal hasn't expired
 - Ensure the service principal has the necessary permissions
+- **See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed solutions**
 
 ### Tool Installation Issues
 - The setup script runs automatically when the container starts

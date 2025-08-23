@@ -52,23 +52,56 @@ if [ -z "$AZURE_CLIENT_ID" ] || [ -z "$AZURE_CLIENT_SECRET" ] || [ -z "$AZURE_TE
 fi
 
 echo "🔐 Logging in with Service Principal..."
+echo "Client ID: ${AZURE_CLIENT_ID:0:8}..."
+echo "Tenant ID: $AZURE_TENANT_ID"
 
-# Login with service principal
-az login --service-principal \
+# Check Azure CLI version
+echo "Azure CLI version:"
+az version --query 'azure-cli' -o tsv
+
+# Login with service principal (with better error handling)
+echo "Attempting login..."
+if az login --service-principal \
     --username "$AZURE_CLIENT_ID" \
     --password "$AZURE_CLIENT_SECRET" \
-    --tenant "$AZURE_TENANT_ID"
+    --tenant "$AZURE_TENANT_ID" \
+    --allow-no-subscriptions; then
 
-# Set subscription if provided
-if [ ! -z "$AZURE_SUBSCRIPTION_ID" ]; then
-    echo "📋 Setting subscription to: $AZURE_SUBSCRIPTION_ID"
-    az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+    echo "✅ Login successful!"
+
+    # Set subscription if provided
+    if [ ! -z "$AZURE_SUBSCRIPTION_ID" ]; then
+        echo "📋 Setting subscription to: $AZURE_SUBSCRIPTION_ID"
+        if az account set --subscription "$AZURE_SUBSCRIPTION_ID"; then
+            echo "✅ Subscription set successfully"
+        else
+            echo "⚠️  Warning: Could not set subscription. You may need to set it manually."
+        fi
+    fi
+
+    # Show current account info
+    echo "Current account:"
+    if az account show --query "{name:name, id:id, tenantId:tenantId}" -o table 2>/dev/null; then
+        echo "✅ Account information retrieved successfully"
+    else
+        echo "⚠️  Warning: Could not retrieve account information"
+        echo "Available subscriptions:"
+        az account list --query "[].{name:name, id:id, isDefault:isDefault}" -o table
+    fi
+else
+    echo "❌ Login failed!"
+    echo ""
+    echo "Troubleshooting tips:"
+    echo "1. Verify your service principal credentials are correct"
+    echo "2. Check that the service principal has the correct permissions"
+    echo "3. Ensure the service principal hasn't expired"
+    echo "4. Try logging in manually:"
+    echo "   az login --service-principal --username YOUR_CLIENT_ID --password YOUR_CLIENT_SECRET --tenant YOUR_TENANT_ID"
+    echo ""
+    echo "For more debugging, try:"
+    echo "   az login --service-principal --username YOUR_CLIENT_ID --password YOUR_CLIENT_SECRET --tenant YOUR_TENANT_ID --debug"
+    exit 1
 fi
-
-# Show current account info
-echo "✅ Login successful!"
-echo "Current account:"
-az account show --query "{name:name, id:id, tenantId:tenantId}" -o table
 EOF
 
 chmod +x /home/vscode/login-with-sp.sh
@@ -88,23 +121,61 @@ if (-not $env:AZURE_CLIENT_ID -or -not $env:AZURE_CLIENT_SECRET -or -not $env:AZ
 }
 
 Write-Host "🔐 Logging in with Service Principal..." -ForegroundColor Green
+Write-Host "Client ID: $($env:AZURE_CLIENT_ID.Substring(0,8))..." -ForegroundColor Cyan
+Write-Host "Tenant ID: $env:AZURE_TENANT_ID" -ForegroundColor Cyan
 
-# Login with service principal
-Connect-AzAccount -ServicePrincipal `
-    -ApplicationId $env:AZURE_CLIENT_ID `
-    -Credential (New-Object PSCredential($env:AZURE_CLIENT_ID, (ConvertTo-SecureString $env:AZURE_CLIENT_SECRET -AsPlainText -Force))) `
-    -Tenant $env:AZURE_TENANT_ID
+# Check Azure PowerShell version
+Write-Host "Azure PowerShell version:" -ForegroundColor Cyan
+Get-Module -Name Az -ListAvailable | Select-Object Name, Version | Format-Table
 
-# Set subscription if provided
-if ($env:AZURE_SUBSCRIPTION_ID) {
-    Write-Host "📋 Setting subscription to: $env:AZURE_SUBSCRIPTION_ID" -ForegroundColor Green
-    Set-AzContext -SubscriptionId $env:AZURE_SUBSCRIPTION_ID
+# Login with service principal (with better error handling)
+Write-Host "Attempting login..." -ForegroundColor Yellow
+try {
+    $credential = New-Object PSCredential($env:AZURE_CLIENT_ID, (ConvertTo-SecureString $env:AZURE_CLIENT_SECRET -AsPlainText -Force))
+    Connect-AzAccount -ServicePrincipal -ApplicationId $env:AZURE_CLIENT_ID -Credential $credential -Tenant $env:AZURE_TENANT_ID -ErrorAction Stop
+
+    Write-Host "✅ Login successful!" -ForegroundColor Green
+
+    # Set subscription if provided
+    if ($env:AZURE_SUBSCRIPTION_ID) {
+        Write-Host "📋 Setting subscription to: $env:AZURE_SUBSCRIPTION_ID" -ForegroundColor Green
+        try {
+            Set-AzContext -SubscriptionId $env:AZURE_SUBSCRIPTION_ID -ErrorAction Stop
+            Write-Host "✅ Subscription set successfully" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "⚠️  Warning: Could not set subscription. You may need to set it manually." -ForegroundColor Yellow
+            Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
+
+    # Show current account info
+    Write-Host "Current account:" -ForegroundColor Green
+    try {
+        Get-AzContext | Select-Object Name, Account, Subscription, Tenant | Format-Table
+        Write-Host "✅ Account information retrieved successfully" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "⚠️  Warning: Could not retrieve account information" -ForegroundColor Yellow
+        Write-Host "Available subscriptions:" -ForegroundColor Cyan
+        Get-AzSubscription | Select-Object Name, Id, State | Format-Table
+    }
 }
-
-# Show current account info
-Write-Host "✅ Login successful!" -ForegroundColor Green
-Write-Host "Current account:" -ForegroundColor Green
-Get-AzContext | Select-Object Name, Account, Subscription, Tenant | Format-Table
+catch {
+    Write-Host "❌ Login failed!" -ForegroundColor Red
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Troubleshooting tips:" -ForegroundColor Yellow
+    Write-Host "1. Verify your service principal credentials are correct" -ForegroundColor White
+    Write-Host "2. Check that the service principal has the correct permissions" -ForegroundColor White
+    Write-Host "3. Ensure the service principal hasn't expired" -ForegroundColor White
+    Write-Host "4. Try logging in manually:" -ForegroundColor White
+    Write-Host "   Connect-AzAccount -ServicePrincipal -ApplicationId YOUR_CLIENT_ID -Credential YOUR_CREDENTIAL -Tenant YOUR_TENANT_ID" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "For more debugging, try:" -ForegroundColor Yellow
+    Write-Host "   Connect-AzAccount -ServicePrincipal -ApplicationId YOUR_CLIENT_ID -Credential YOUR_CREDENTIAL -Tenant YOUR_TENANT_ID -Debug" -ForegroundColor Cyan
+    exit 1
+}
 EOF
 
 # Create a .env.example file
