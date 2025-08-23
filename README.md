@@ -15,8 +15,23 @@ This repository contains a development container configuration for Azure develop
 1. **Clone or open this repository in VS Code**
 
 2. **Create a service principal** (if you don't have one):
+
+   **Option A: Use the provided script (Recommended)**
    ```bash
-   az ad sp create-for-rbac --name "dev-container-sp" --role contributor
+   chmod +x create-service-principal.sh
+   ./create-service-principal.sh -s YOUR_SUBSCRIPTION_ID
+   ```
+
+   **Option B: Manual creation**
+   ```bash
+   # Get your subscription ID first
+   az account show --query id -o tsv
+
+   # Create service principal with subscription scope
+   az ad sp create-for-rbac \
+     --name "dev-container-sp" \
+     --role "Contributor" \
+     --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID"
    ```
    Save the output - you'll need the `appId`, `password`, and `tenant` values.
 
@@ -69,13 +84,22 @@ This repository contains a development container configuration for Azure develop
 ### Creating a Service Principal
 
 ```bash
-# Create a service principal with Contributor role
-az ad sp create-for-rbac --name "dev-container-sp" --role contributor
-
-# Or with more specific permissions
+# Create a service principal with Contributor role on a specific subscription
 az ad sp create-for-rbac \
   --name "dev-container-sp" \
   --role "Contributor" \
+  --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID"
+
+# Create a service principal with Contributor role on a specific resource group
+az ad sp create-for-rbac \
+  --name "dev-container-sp" \
+  --role "Contributor" \
+  --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP"
+
+# Create a service principal with Reader role on a subscription (more restrictive)
+az ad sp create-for-rbac \
+  --name "dev-container-sp-reader" \
+  --role "Reader" \
   --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID"
 ```
 
@@ -84,6 +108,23 @@ az ad sp create-for-rbac \
 The service principal needs at least the following permissions:
 - **Contributor** role on the subscription or resource groups you'll be working with
 - **User.Read** permission on Azure AD (for authentication)
+
+### Scope Examples
+
+**Subscription Scope** (recommended for development):
+```bash
+--scopes "/subscriptions/12345678-1234-1234-1234-123456789012"
+```
+
+**Resource Group Scope** (more restrictive):
+```bash
+--scopes "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/my-dev-rg"
+```
+
+**Multiple Resource Groups**:
+```bash
+--scopes "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/my-dev-rg" "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/my-test-rg"
+```
 
 ### Environment Variables
 

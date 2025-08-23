@@ -131,6 +131,59 @@ AZURE_RESOURCE_GROUP=your-resource-group-name
 AZURE_LOCATION=eastus
 EOF
 
+# Create a service principal creation guide
+cat > /home/vscode/create-service-principal.md << 'EOF'
+# Creating a Service Principal for Azure Dev Container
+
+## Quick Commands
+
+### 1. Get Your Subscription ID
+```bash
+az account show --query id -o tsv
+```
+
+### 2. Create Service Principal with Subscription Scope (Recommended)
+```bash
+az ad sp create-for-rbac \
+  --name "dev-container-sp" \
+  --role "Contributor" \
+  --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID"
+```
+
+### 3. Create Service Principal with Resource Group Scope (More Restrictive)
+```bash
+az ad sp create-for-rbac \
+  --name "dev-container-sp" \
+  --role "Contributor" \
+  --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP"
+```
+
+### 4. Create Service Principal with Reader Role (Read-Only)
+```bash
+az ad sp create-for-rbac \
+  --name "dev-container-sp-reader" \
+  --role "Reader" \
+  --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID"
+```
+
+## Output Format
+The command will output JSON like this:
+```json
+{
+  "appId": "12345678-1234-1234-1234-123456789012",
+  "displayName": "dev-container-sp",
+  "password": "your-secret-password",
+  "tenant": "12345678-1234-1234-1234-123456789012"
+}
+```
+
+## Security Notes
+- Save the password immediately - it won't be shown again
+- Use the most restrictive scope possible for your needs
+- Consider using resource group scope instead of subscription scope
+- Regularly rotate service principal secrets
+EOF
+
 # Create a README for the dev container
 cat > /home/vscode/README.md << 'EOF'
 # Azure Development Container
@@ -148,13 +201,25 @@ This dev container is configured with Azure CLI, Azure PowerShell, and Bicep for
 
 ### Using Service Principal
 
-1. Set up your environment variables:
+1. **Create a service principal** (if you don't have one):
+   ```bash
+   # Get your subscription ID first
+   az account show --query id -o tsv
+
+   # Create service principal with subscription scope
+   az ad sp create-for-rbac \
+     --name "dev-container-sp" \
+     --role "Contributor" \
+     --scopes "/subscriptions/YOUR_SUBSCRIPTION_ID"
+   ```
+
+2. Set up your environment variables:
    ```bash
    cp .env.example .env
    # Edit .env with your service principal details
    ```
 
-2. Login using the provided script:
+3. Login using the provided script:
    ```bash
    # Using bash
    ./login-with-sp.sh
@@ -169,6 +234,18 @@ This dev container is configured with Azure CLI, Azure PowerShell, and Bicep for
 - `AZURE_CLIENT_SECRET`: Your service principal client secret
 - `AZURE_TENANT_ID`: Your Azure tenant ID
 - `AZURE_SUBSCRIPTION_ID`: (Optional) Your Azure subscription ID
+
+### Service Principal Scopes
+
+**Subscription Scope** (recommended for development):
+```bash
+--scopes "/subscriptions/12345678-1234-1234-1234-123456789012"
+```
+
+**Resource Group Scope** (more restrictive):
+```bash
+--scopes "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/my-dev-rg"
+```
 
 ## 📁 Useful Commands
 
@@ -214,3 +291,4 @@ echo "  - PowerShell: $(pwsh --version)"
 echo ""
 echo "📖 Check /home/vscode/README.md for usage instructions"
 echo "🔐 Use ./login-with-sp.sh to authenticate with your service principal"
+echo "📋 Check /home/vscode/create-service-principal.md for service principal creation guide"

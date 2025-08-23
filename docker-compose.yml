@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  azure-dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    container_name: azure-dev-container
+    volumes:
+      # Mount your Bicep repository here
+      - ${BICEP_REPO_PATH:-./bicep-repo}:/workspaces/bicep-repo:cached
+      # Mount Azure configuration for persistence
+      - ${HOME}/.azure:/home/vscode/.azure:cached
+      # Mount additional repositories if needed
+      - ${ADDITIONAL_REPO_PATH:-./additional-repos}:/workspaces/additional-repos:cached
+    environment:
+      - AZURE_CONFIG_DIR=/home/vscode/.azure
+      - DISPLAY=${DISPLAY}
+    ports:
+      - "3000:3000"
+      - "8080:8080"
+    stdin_open: true
+    tty: true
+    working_dir: /workspaces/bicep-repo
+    command: /bin/bash
