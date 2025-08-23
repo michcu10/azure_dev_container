@@ -1,0 +1,61 @@
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+
+# Azure CLI configuration
+.azure/
+
+# PowerShell profile
+Microsoft.PowerShell_profile.ps1
+
+# VS Code settings (optional - you might want to keep these)
+.vscode/settings.json
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js (if you add any Node.js tools later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if you add any Python tools later)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Terraform (if you add Terraform later)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
