@@ -132,7 +132,7 @@ Get-Module -Name Az -ListAvailable | Select-Object Name, Version | Format-Table
 Write-Host "Attempting login..." -ForegroundColor Yellow
 try {
     $credential = New-Object PSCredential($env:AZURE_CLIENT_ID, (ConvertTo-SecureString $env:AZURE_CLIENT_SECRET -AsPlainText -Force))
-    Connect-AzAccount -ServicePrincipal -ApplicationId $env:AZURE_CLIENT_ID -Credential $credential -Tenant $env:AZURE_TENANT_ID -ErrorAction Stop
+    Connect-AzAccount -ServicePrincipal -Credential $credential -Tenant $env:AZURE_TENANT_ID -ErrorAction Stop
 
     Write-Host "✅ Login successful!" -ForegroundColor Green
 
@@ -170,10 +170,10 @@ catch {
     Write-Host "2. Check that the service principal has the correct permissions" -ForegroundColor White
     Write-Host "3. Ensure the service principal hasn't expired" -ForegroundColor White
     Write-Host "4. Try logging in manually:" -ForegroundColor White
-    Write-Host "   Connect-AzAccount -ServicePrincipal -ApplicationId YOUR_CLIENT_ID -Credential YOUR_CREDENTIAL -Tenant YOUR_TENANT_ID" -ForegroundColor Cyan
+    Write-Host "   Connect-AzAccount -ServicePrincipal -Credential YOUR_CREDENTIAL -Tenant YOUR_TENANT_ID" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "For more debugging, try:" -ForegroundColor Yellow
-    Write-Host "   Connect-AzAccount -ServicePrincipal -ApplicationId YOUR_CLIENT_ID -Credential YOUR_CREDENTIAL -Tenant YOUR_TENANT_ID -Debug" -ForegroundColor Cyan
+    Write-Host "   Connect-AzAccount -ServicePrincipal -Credential YOUR_CREDENTIAL -Tenant YOUR_TENANT_ID -Debug" -ForegroundColor Cyan
     exit 1
 }
 EOF
